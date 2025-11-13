@@ -43,13 +43,11 @@
     .search-bar input {
       width: 200px;
     }
-    main {
-      padding: 2rem;
-    }
     .courses {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 20px;
+      padding: 2rem;
     }
     .course-card {
       background: white;
@@ -89,7 +87,7 @@
       color: #0077b6;
       margin-top: 0.5rem;
     }
-    .add-btn {
+    .add-btn, .remove-btn {
       margin-top: 0.8rem;
       background: #0077b6;
       color: white;
@@ -99,32 +97,31 @@
       cursor: pointer;
       transition: 0.3s;
     }
-    .add-btn:hover {
+    .add-btn:hover, .remove-btn:hover {
       background: #023e8a;
-    }
-    footer {
-      background: #023047;
-      color: white;
-      text-align: center;
-      padding: 1rem;
-      margin-top: 2rem;
     }
     .cart-summary {
-      position: fixed;
-      bottom: 15px;
-      right: 15px;
-      background: #0077b6;
-      color: white;
-      padding: 15px 20px;
-      border-radius: 12px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
+      background: white;
+      color: #0077b6;
+      padding: 10px 15px;
+      border-radius: 8px;
       font-weight: 600;
-      z-index: 100;
-      transition: 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
     }
-    .cart-summary:hover {
-      background: #023e8a;
+    .cart-summary button {
+      background: red;
+      color: white;
+      border: none;
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .cart-summary button:hover {
+      background: darkred;
     }
   </style>
 </head>
@@ -146,6 +143,17 @@
           <option value="priceDesc">Price High–Low</option>
         </select>
         <button class="add-btn" @click="addCourse">+ Add Course</button>
+      </div>
+
+      <!-- Cart at top -->
+      <div class="cart-summary">
+        🛒 Cart ({{ cartItems.length }} items) — {{ formatPrice(cartTotal) }}
+        <div v-if="cartItems.length">
+          <span v-for="item in cartItems" :key="item.course._id">
+            {{ item.course.title }} x{{ item.qty }}
+            <button @click="removeFromCart(item.course)">x</button>
+          </span>
+        </div>
       </div>
     </header>
 
@@ -169,14 +177,6 @@
       </section>
       <p v-else>No courses found 😢</p>
     </main>
-
-    <footer>
-      <p>© 2025 Nkiel Bookstore — Learn Languages Online</p>
-    </footer>
-
-    <div class="cart-summary" @click="checkout">
-      🛒 Cart ({{ cartItems.length }} items) — {{ formatPrice(cartTotal) }}
-    </div>
   </div>
 
   <script>
@@ -184,7 +184,6 @@
 
     createApp({
       setup() {
-        const API_BASE = "https://nkiel-backend-2.onrender.com";
         const courses = reactive([
           {
             _id: 1,
@@ -227,80 +226,57 @@
         const cart = reactive([]);
 
         const categories = computed(() =>
-          Array.from(new Set(courses.map((c) => c.category))).sort()
+          Array.from(new Set(courses.map(c => c.category))).sort()
         );
-
-        const fetchCourses = async () => {
-          try {
-            const res = await fetch(`${API_BASE}/api/courses`);
-            const data = await res.json();
-            if (data && data.length > 0) {
-              courses.splice(0, courses.length, ...data);
-            }
-          } catch (err) {
-            console.error("Error loading courses:", err);
-          }
-        };
-        fetchCourses();
 
         const filteredCourses = computed(() => {
           let filtered = [...courses];
           if (query.value) {
             const q = query.value.toLowerCase();
             filtered = filtered.filter(
-              (c) =>
-                c.title.toLowerCase().includes(q) ||
-                c.instructor.toLowerCase().includes(q)
+              c => c.title.toLowerCase().includes(q) || c.instructor.toLowerCase().includes(q)
             );
           }
-          if (selectedCategory.value)
-            filtered = filtered.filter(
-              (c) => c.category === selectedCategory.value
-            );
-
+          if (selectedCategory.value) filtered = filtered.filter(c => c.category === selectedCategory.value);
           switch (selectedSort.value) {
-            case "titleAsc":
-              filtered.sort((a, b) => a.title.localeCompare(b.title));
-              break;
-            case "titleDesc":
-              filtered.sort((a, b) => b.title.localeCompare(a.title));
-              break;
-            case "priceAsc":
-              filtered.sort((a, b) => a.price - b.price);
-              break;
-            case "priceDesc":
-              filtered.sort((a, b) => b.price - a.price);
-              break;
+            case "titleAsc": filtered.sort((a,b)=>a.title.localeCompare(b.title)); break;
+            case "titleDesc": filtered.sort((a,b)=>b.title.localeCompare(a.title)); break;
+            case "priceAsc": filtered.sort((a,b)=>a.price - b.price); break;
+            case "priceDesc": filtered.sort((a,b)=>b.price - a.price); break;
           }
           return filtered;
         });
 
         const cartItems = computed(() =>
-          cart
-            .map((id) => {
-              const course = courses.find((c) => c._id === id);
-              if (!course) return null;
-              const qty = cart.filter((i) => i === id).length;
-              return { course, qty };
-            })
-            .filter(Boolean)
+          cart.map(id => {
+            const course = courses.find(c => c._id === id);
+            if (!course) return null;
+            const qty = cart.filter(i => i === id).length;
+            return { course, qty };
+          }).filter(Boolean)
         );
 
         const cartTotal = computed(() =>
-          cartItems.value.reduce((t, i) => t + i.course.price * i.qty, 0)
+          cartItems.value.reduce((t,i)=>t + i.course.price*i.qty,0)
         );
 
-        const formatPrice = (p) => "$" + p.toFixed(2);
+        const formatPrice = p => "$"+p.toFixed(2);
 
-        const addToCart = (course) => {
-          if (course.spaces <= 0)
-            return Swal.fire("Sold Out", "No spaces left", "error");
+        const addToCart = course => {
+          if(course.spaces<=0) return Swal.fire("Sold Out","No spaces left","error");
           cart.push(course._id);
           course.spaces--;
         };
 
-        const handleImageError = (e) =>
-          (e.target.src = "https://via.placeholder.com/600x400?text=No+Image");
+        const removeFromCart = course => {
+          const index = cart.indexOf(course._id);
+          if(index !== -1) {
+            cart.splice(index,1);
+            course.spaces++;
+          }
+        };
+
+        const handleImageError = e => e.target.src="https://via.placeholder.com/600x400?text=No+Image";
 
         async function addCourse() {
           const { value: f } = await Swal.fire({
@@ -325,97 +301,15 @@
               cover: "https://via.placeholder.com/400x200",
             }),
           });
-          if (f && f.title) {
-            const res = await fetch(`${API_BASE}/api/courses`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(f),
-            });
-            const newCourse = await res.json();
-            courses.push(newCourse);
-            Swal.fire("Added!", `${newCourse.title} added.`, "success");
-          }
-        }
-
-        async function checkout() {
-          if (cartItems.value.length === 0) return;
-
-          const { value: form } = await Swal.fire({
-            title: "Checkout",
-            html: `
-              <input id="name" placeholder="Full Name*" class="swal2-input" required>
-              <input id="email" type="email" placeholder="Email*" class="swal2-input" required>
-              <input id="phone" type="tel" placeholder="Phone*" class="swal2-input" required>
-              <input id="address" placeholder="Address*" class="swal2-input" required>
-              <input id="city" placeholder="City*" class="swal2-input" required>
-              <input id="state" placeholder="State/Province*" class="swal2-input" required>
-              <input id="zip" placeholder="ZIP / Postal Code*" class="swal2-input" required>
-              <input id="country" placeholder="Country*" class="swal2-input" required>`,
-            showCancelButton: true,
-            confirmButtonText: "Place Order",
-            cancelButtonText: "Cancel",
-            preConfirm: () => {
-              const requiredFields = [
-                "name","email","phone","address","city","state","zip","country"
-              ];
-              for (let id of requiredFields) {
-                const val = document.getElementById(id).value.trim();
-                if (!val) {
-                  Swal.showValidationMessage(`Please enter ${id}`);
-                  return false;
-                }
-              }
-              return {
-                name: document.getElementById("name").value.trim(),
-                email: document.getElementById("email").value.trim(),
-                phone: document.getElementById("phone").value.trim(),
-                address: document.getElementById("address").value.trim(),
-                city: document.getElementById("city").value.trim(),
-                state: document.getElementById("state").value.trim(),
-                zip: document.getElementById("zip").value.trim(),
-                country: document.getElementById("country").value.trim(),
-              };
-            },
-          });
-
-          if (form) {
-            await fetch(`${API_BASE}/api/orders`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                customer: form,
-                items: cartItems.value.map((i) => ({
-                  courseId: i.course._id,
-                  qty: i.qty,
-                })),
-                total: cartTotal.value,
-              }),
-            });
-            Swal.fire(
-              "✅ Order Complete",
-              `Thanks ${form.name}. Total: ${formatPrice(cartTotal.value)}`,
-              "success"
-            );
-            cart.splice(0);
-          }
+          if(f && f.title) courses.push(f);
         }
 
         return {
-          courses,
-          query,
-          selectedCategory,
-          selectedSort,
-          categories,
-          filteredCourses,
-          cartItems,
-          cartTotal,
-          formatPrice,
-          addToCart,
-          addCourse,
-          checkout,
-          handleImageError,
+          courses, query, selectedCategory, selectedSort, categories,
+          filteredCourses, cartItems, cartTotal, formatPrice,
+          addToCart, addCourse, removeFromCart, handleImageError
         };
-      },
+      }
     }).mount("#app");
   </script>
 </body>
