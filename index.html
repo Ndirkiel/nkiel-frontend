@@ -185,7 +185,42 @@
     createApp({
       setup() {
         const API_BASE = "https://nkiel-backend-2.onrender.com";
-        const courses = reactive([]);
+        const courses = reactive([
+          {
+            _id: 1,
+            title: "English Basics",
+            instructor: "John Doe",
+            category: "English",
+            location: "USA",
+            price: 49.99,
+            rating: 4.5,
+            spaces: 10,
+            cover: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+          },
+          {
+            _id: 2,
+            title: "French Advanced",
+            instructor: "Marie Curie",
+            category: "French",
+            location: "France",
+            price: 79.99,
+            rating: 4.8,
+            spaces: 8,
+            cover: "https://cdn-icons-png.flaticon.com/512/1048/1048949.png",
+          },
+          {
+            _id: 3,
+            title: "Spanish Beginner",
+            instructor: "Carlos Lopez",
+            category: "Spanish",
+            location: "Spain",
+            price: 39.99,
+            rating: 4.2,
+            spaces: 12,
+            cover: "https://cdn-icons-png.flaticon.com/512/1048/1048953.png",
+          },
+        ]);
+
         const query = ref("");
         const selectedCategory = ref("");
         const selectedSort = ref("");
@@ -199,7 +234,9 @@
           try {
             const res = await fetch(`${API_BASE}/api/courses`);
             const data = await res.json();
-            courses.splice(0, courses.length, ...data);
+            if (data && data.length > 0) {
+              courses.splice(0, courses.length, ...data);
+            }
           } catch (err) {
             console.error("Error loading courses:", err);
           }
@@ -319,14 +356,7 @@
             cancelButtonText: "Cancel",
             preConfirm: () => {
               const requiredFields = [
-                "name",
-                "email",
-                "phone",
-                "address",
-                "city",
-                "state",
-                "zip",
-                "country",
+                "name","email","phone","address","city","state","zip","country"
               ];
               for (let id of requiredFields) {
                 const val = document.getElementById(id).value.trim();
@@ -366,7 +396,6 @@
               `Thanks ${form.name}. Total: ${formatPrice(cartTotal.value)}`,
               "success"
             );
-            await fetchCourses();
             cart.splice(0);
           }
         }
