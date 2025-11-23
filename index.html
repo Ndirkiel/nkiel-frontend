@@ -54,15 +54,7 @@ main { display: block; align-items: start; }
 .cart-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
 .cart-thumb img { width: 56px; height: 40px; border-radius: 6px; object-fit: cover; background: #ddd; }
 .total-row { display: flex; justify-content: space-between; font-weight: 700; margin-top: 10px; }
-.close-btn {
-  float: right; 
-  background: var(--danger); 
-  color: white; 
-  border: none; 
-  border-radius: 6px; 
-  padding: 2px 6px; 
-  cursor: pointer;
-}
+.close-btn { float: right; background: var(--danger); color: white; border: none; border-radius: 6px; padding: 2px 6px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -75,7 +67,6 @@ main { display: block; align-items: start; }
         <div style="font-size:12px;color:var(--muted)">Language Course Demo</div>
       </div>
     </div>
-
     <div class="controls">
       <input type="search" v-model="query" placeholder="Search…" />
       <select v-model="selectedCategory">
@@ -89,7 +80,6 @@ main { display: block; align-items: start; }
         <option value="priceAsc">Price (Low → High)</option>
         <option value="priceDesc">Price (High → Low)</option>
       </select>
-
       <button @click.stop="showCart = !showCart">
         🛒 Cart ({{ cartItems.length }})
       </button>
@@ -98,9 +88,7 @@ main { display: block; align-items: start; }
         <h3>Cart
           <button class="close-btn" @click="showCart = false">✕</button>
         </h3>
-
         <div v-if="cartItems.length === 0" style="color: var(--muted)">Your cart is empty</div>
-
         <div v-for="item in cartItems" :key="item.course._id" class="cart-item">
           <div class="cart-thumb"><img :src="item.course.cover" /></div>
           <div style="flex:1">
@@ -111,12 +99,10 @@ main { display: block; align-items: start; }
           <button style="background:var(--danger);padding:4px 8px"
                   @click="removeFromCart(item.course._id)">X</button>
         </div>
-
         <div class="total-row">
           <div>Total</div>
           <div>{{ formatPrice(cartTotal) }}</div>
         </div>
-
         <div style="margin-top:10px;display:flex;gap:6px">
           <button :disabled="cartItems.length===0" @click="checkout">Checkout</button>
           <button class="ghost" :disabled="cartItems.length===0" @click="clearCart">Clear</button>
@@ -157,7 +143,8 @@ const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
 
 createApp({
   setup() {
-    const API_BASE = "https://nkiel-backend-5.onrender.com";
+    // Correct API endpoint to match your backend
+    const API_BASE = "https://nkiel-backend-5.onrender.com/api";
 
     const courses = ref([]);
     const query = ref("");
@@ -180,6 +167,7 @@ createApp({
         courses.value = [];
       }
     };
+
     fetchCourses();
 
     const filteredCourses = computed(() => {
@@ -289,14 +277,11 @@ createApp({
           Swal.fire("✅ Order Complete","Order placed successfully","success");
           cart.value = [];
           showCart.value = false;
-          // refresh courses to get updated spaces
           fetchCourses();
         } else {
           Swal.fire("❌ Error", data.error || "Could not place order","error");
-          // get fresh data in case spaces changed
           fetchCourses();
         }
-
       } catch(err){
         Swal.fire("❌ Error", err.message,"error");
       }
