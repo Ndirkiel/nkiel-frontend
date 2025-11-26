@@ -1,2 +1,4 @@
 - GITHUB REPO LINK : https://github.com/Ndirkiel/nkiel-frontend
 - GITHUB PAGE LINK: https://ndirkiel.github.io/nkiel-frontend/
+- STUDENT NAME : NDIRPAYA EZEKIEL SANYA
+- STUDENT ID : M01074045
